@@ -244,12 +244,18 @@ module ScopedSearch
       middle_table = field.definition.klass.reflections[field.relation].options[:through]
       middle_table_name = field.definition.klass.reflections[middle_table].klass.table_name
 
+      join_on = if field.klass.reflections[middle_table].macro == :belongs_to
+        "#{middle_table_name}.id = #{endpoint_table_name}.#{field.reflection_keys(field.klass.reflections[middle_table])[1]}"
+      else
+        "#{middle_table_name}.#{field.reflection_keys(field.klass.reflections[middle_table])[1]} = #{endpoint_table_name}.id"
+      end
+
       <<-SQL
         #{field.definition.klass.table_name}
         INNER JOIN #{middle_table_name}
         ON #{field.definition.klass.table_name}.id = #{middle_table_name}.#{field.reflection_keys(field.definition.klass.reflections[middle_table])[1]}
         INNER JOIN #{endpoint_table_name}
-        ON #{middle_table_name}.#{field.reflection_keys(field.klass.reflections[middle_table])[1]} = #{endpoint_table_name}.id
+        ON #{join_on}
       SQL
     end
 
